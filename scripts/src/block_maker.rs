@@ -127,7 +127,7 @@ pub(crate) fn block_maker() {
 }
 
 fn create_block_header(merkle_root: String) -> String {
-    let version = "01000000"; //little endian hex
+    let version = "04000000"; //little endian hex
     let prevous_block_hash = "0000000000000000000000000000000000000000000000000000000000000000"; //32 bytes of zeroes
     let time = "662aad6e"; //unix timestamp
     let target = "0000ffff00000000000000000000000000000000000000000000000000000000";
