@@ -107,6 +107,7 @@ pub(crate) fn block_maker() {
     
     // add the block header, serialized coinbase txn & list of all included txn in the output.txt file
     let mut file = fs::File::create("../output.txt").expect("Unable to create file");
+
     file.write_all(block_header.as_bytes())
         .expect("Unable to write to file");
     file.write_all("\n".as_bytes())
@@ -160,8 +161,8 @@ fn mine_header(target: &str, header: String) -> String {
         let mut header_bytes = header_bytes_.clone();
         header_bytes.extend(nonce.to_le_bytes());
         
-        let hash_bytes = hash256(&header_bytes);
-
+        let mut hash_bytes = hash256(&header_bytes);
+        hash_bytes.reverse();
         //compare hash with the target
         if hash_bytes < target_bytes {
             println!("Found a block");
