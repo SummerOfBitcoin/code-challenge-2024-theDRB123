@@ -6,7 +6,12 @@
 
 use core::hash;
 use std::{
-    fmt::format, fs, io::{self, Bytes, Read, Write}, string, time::{SystemTime, UNIX_EPOCH}, vec
+    fmt::format,
+    fs,
+    io::{self, Bytes, Read, Write},
+    string,
+    time::{SystemTime, UNIX_EPOCH},
+    vec,
 };
 
 use ripemd::digest::InvalidOutputSize;
@@ -84,20 +89,20 @@ pub(crate) fn block_maker() {
 
     println!("Elapsed: {:?}", now.elapsed());
 
-    let (mut txids, wtxids) = create_txid_wtxid(&transactions.0);
+    let (mut txids, wtxids) = create_txid_wtxid(&transactions.0, &transactions.1);
 
     let merkle_wtxid = create_merkle_root(&wtxids);
 
     println!("merkle root -> {}", merkle_wtxid);
-    let coinbase_txn = create_coin_base(&merkle_wtxid, &transactions.1);
-    println!("Coinbase: {}", coinbase_txn);
-    transactions.0.insert(0, coinbase_txn.clone());
+    let coinbase_txn = create_coin_base(&merkle_wtxid, &transactions.2);
+    println!("Coinbase: {}", coinbase_txn.0);
+    transactions.0.insert(0, coinbase_txn.clone().0);
 
     //create txid from
-    txids.insert(0, serialization::txid_maker(coinbase_txn.clone()));
+    txids.insert(0, serialization::txid_maker(coinbase_txn.clone().1));
 
     //create merkle root
-    let merkle_txid = create_merkle_root(&txids);
+    let merkle_txid = create_merkle_root(&wtxids);
     println!("Merkle_txid = {}", merkle_txid);
 
     let block_header = create_block_header(merkle_txid);
@@ -109,7 +114,7 @@ pub(crate) fn block_maker() {
         .expect("Unable to write to file");
     file.write_all("\n".as_bytes())
         .expect("Unable to write to file");
-    file.write_all(coinbase_txn.as_bytes())
+    file.write_all(coinbase_txn.0.as_bytes())
         .expect("Unable to write to file");
     file.write_all("\n".as_bytes())
         .expect("Unable to write to file");
@@ -183,15 +188,12 @@ fn mine_header(target: &str, header: String) -> String {
     }
 }
 
-fn create_txid_wtxid(txns: &Vec<String>) -> (Vec<String>, Vec<String>) {
+fn create_txid_wtxid(txns: &Vec<String>, wtxns: &Vec<String>) -> (Vec<String>, Vec<String>) {
     let mut txids: Vec<String> = vec![];
     let mut wtxids: Vec<String> = vec![];
-
-    for index in (0..txns.len()).step_by(2) {
-        let mut hasher = Sha256::new();
-
-        let txn_bytes = hex::decode(&txns[index]).expect("Couldnt parse hex");
-        let txn_seg_bytes = hex::decode(&txns[index + 1]).expect("Couldnt parse hex");
+    let mut hasher = Sha256::new();
+    for txn in txns {
+        let txn_bytes = hex::decode(&txn).expect("Couldnt parse hex");
 
         hasher.update(txn_bytes);
         let result = hasher.finalize_reset();
@@ -199,24 +201,28 @@ fn create_txid_wtxid(txns: &Vec<String>) -> (Vec<String>, Vec<String>) {
         let result = hasher.finalize_reset();
         let txid = hex::encode(result);
 
+        txids.push(txid);
+    }
+
+    for wtxn in wtxns {
+        let txn_seg_bytes = hex::decode(wtxn).expect("Couldnt parse hex");
         hasher.update(txn_seg_bytes);
         let result = hasher.finalize_reset();
         hasher.update(result);
         let result = hasher.finalize_reset();
         let wtxid = hex::encode(result);
-
-        txids.push(txid);
         wtxids.push(wtxid);
     }
 
     return (txids, wtxids);
 }
 
-fn transaction_selector(txns: Vec<String>) -> (Vec<String>, usize) {
+fn transaction_selector(txns: Vec<String>) -> (Vec<String>, Vec<String>, usize) {
     // let path = "../mempool";
     // let directory = fs::read_dir(path).unwrap();
 
     let mut txvec: Vec<String> = vec![];
+    let mut wtxvec: Vec<String> = vec![];
     let mut weight: usize = 0;
     let mut bytes: usize = 0;
     let mut total_fees: usize = 0;
@@ -235,7 +241,7 @@ fn transaction_selector(txns: Vec<String>) -> (Vec<String>, usize) {
         let txwt = calculate_weight(&serialized_tx.1, &serialized_tx.2);
         if weight + txwt < 4000000 {
             //push the txndata and witness data to the txvec
-            txvec.push(serialized_tx.clone().0); //for wtxid
+            wtxvec.push(serialized_tx.clone().0); //for wtxid
             txvec.push(serialized_tx.clone().1); //for txid
             weight += txwt;
             bytes += serialized_tx.1.len() / 2 + serialized_tx.2.len() / 8;
@@ -244,7 +250,7 @@ fn transaction_selector(txns: Vec<String>) -> (Vec<String>, usize) {
     }
     println!("Total fees generated = {}", total_fees);
     println!("Transaction selected");
-    return (txvec, total_fees);
+    return (txvec, wtxvec, total_fees);
 }
 
 pub(crate) fn check_p2wpkh_pkh(txn: &serde_json::Value) -> bool {
@@ -281,7 +287,7 @@ fn calculate_weight(txn_data: &String, wit_data: &String) -> usize {
     txn_weight + wit_weight
 }
 
-fn create_coin_base(merkle_root: &String, txn_fees: &usize) -> String {
+fn create_coin_base(merkle_root: &String, txn_fees: &usize) -> (String, String) {
     let new_satoshis = txn_fees.clone();
     let mut coinbase = return_coinbase();
     coinbase["vout"][0]["value"] = serde_json::Value::from(new_satoshis);
@@ -293,8 +299,9 @@ fn create_coin_base(merkle_root: &String, txn_fees: &usize) -> String {
     ));
 
     let coinbase_bytes = serialization::serialize_tx(&coinbase);
-    let coinbase_hex = hex::encode(coinbase_bytes.0);
-    return coinbase_hex;
+    let coinbase_hex = hex::encode(coinbase_bytes.0); //complete coinbase
+    let coinbase_wit_hex = hex::encode(coinbase_bytes.1); //without witness data
+    return (coinbase_hex, coinbase_wit_hex);
 }
 
 fn create_merkle_root(transactions: &Vec<String>) -> String {
