@@ -244,13 +244,13 @@ fn transaction_selector(txns: Vec<String>) -> (Vec<String>, Vec<String>, usize) 
         if !check_p2pkh(&tx) {
             continue;
         }
-        if !validation::validate_legacy(&tx) {
+        if !validation::validate_segwit(&tx) {
             continue;
         }
         let serialized_tx = serialization::serializer(&tx);
         let fees = calculate_fees(tx);
         let txwt = calculate_weight(&serialized_tx.1, &serialized_tx.2);
-        if weight + txwt < 50000 - 1000  {
+        if weight + txwt < 150000 - 1000  {
         // if weight + txwt < 4000 {
             //push the txndata and witness data to the txvec
             wtxvec.push(serialized_tx.clone().0); //for wtxid
