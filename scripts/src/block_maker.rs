@@ -292,7 +292,7 @@ fn create_coin_base(merkle_root: &String, txn_fees: &usize) -> (String, String) 
     let mut coinbase = return_coinbase();
     coinbase["vout"][0]["value"] = serde_json::Value::from(new_satoshis);
     coinbase["vout"][1]["scriptpubkey"] =
-        serde_json::Value::from(format!("{}{}", "0020aa21a9ed", merkle_root));
+        serde_json::Value::from(format!("{}{}", "6a24aa21a9ed", merkle_root));
     coinbase["vout"][1]["scriptpubket_asm"] = serde_json::Value::from(format!(
         "{}{}",
         "OP_0 OP_PUSHBYTES_32 aa21a9ed", merkle_root
