@@ -364,7 +364,7 @@ fn create_merkle_root(transactions: &Vec<String>) -> String {
 }
 
 fn read_trasactions() -> Vec<String> {
-    let path = "../mempool2";
+    let path = "../mempool";
     let directory = fs::read_dir(path).unwrap();
 
     let mut transactions: Vec<String> = vec![];
