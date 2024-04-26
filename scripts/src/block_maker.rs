@@ -99,7 +99,7 @@ pub(crate) fn block_maker() {
     transactions.0.insert(0, coinbase_txn.clone().0);
 
     //create txid from
-    txids.insert(0, serialization::txid_maker(coinbase_txn.clone().1));
+    txids.insert(0, serialization::txid_maker(coinbase_txn.clone().0));
 
     //create merkle root
     let merkle_txid = create_merkle_root(&wtxids);
