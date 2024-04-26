@@ -1,3 +1,4 @@
+use ecdsa::signature::rand_core::block;
 use sha2::{Digest, Sha256};
 use std::fs;
 use std::io::Read;
@@ -5,49 +6,51 @@ use std::io::Read;
 use crate::{block_maker, serialization};
 use crate::validation::{validate_legacy, validate_segwit};
 
-// pub(crate) fn test_serialization() {
-//     let path = "../mempool";
-//     let mempool = fs::read_dir(path).unwrap();
-//     let mut total_transcations = 0;
-//     let mut valid_transactions = 0;
-//     let mut invalid_transactions = 0;
+pub(crate) fn test_serialization() {
+    let path = "../mempool2";
+    let mempool = fs::read_dir(path).unwrap();
+    let mut total_transcations = 0;
+    let mut valid_transactions = 0;
+    let mut invalid_transactions = 0;
 
-//     for transaction in mempool {
-//         let transaction = transaction.expect("Unable to read directory transaction");
-//         if transaction.path().is_file() {
-//             // then give the file to the transaction processor
-//             // transaction_processor(path, &mut writer, &name)?;
-//             let path = transaction.path();
-//             let name = transaction.file_name();
-//             let filename = name.to_str().unwrap();
+    for transaction in mempool {
+        let transaction = transaction.expect("Unable to read directory transaction");
+        if transaction.path().is_file() {
+            // then give the file to the transaction processor
+            // transaction_processor(path, &mut writer, &name)?;
+            let path = transaction.path();
+            let name = transaction.file_name();
+            let filename = name.to_str().unwrap();
 
-//             let serialized_tx = serialization::serializer(&path.to_str().unwrap());
+            //read the transaction from the file
+            let mut file = std::fs::File::open(path).expect("File not found");
+            let mut tx_data = String::new();
+            file.read_to_string(&mut tx_data)
+                .expect("Error reading file");
 
-//             let txid = serialization::txid_maker(serialized_tx.1.clone());
+            let txn: serde_json::Value = serde_json::from_str(&tx_data).expect("Error parsing JSON");
 
-//             let bytes = hex::decode(txid.clone()).unwrap();
-//             //convert to little endian
-//             let bytes_reverse = reverse_bytes(&bytes);
+            let serialized_tx = serialization::serializer(&txn);
 
-//             //get the filename by hashing txid once more
-//             let mut hasher = Sha256::new();
-//             hasher.update(&bytes_reverse);
-//             let result = hasher.finalize_reset();
-//             let result_hex = hex::encode(result);
+            let mut txid = serialization::txid_maker(serialized_tx.1.clone());
+            let wtxid = serialization::txid_maker(serialized_tx.0.clone());
 
-//             if filename == result_hex + ".json" {
-//                 valid_transactions += 1;
-//             } else {
-//                 invalid_transactions += 1;
-//             }
-//             total_transcations += 1;
-//         }
-//     }
+            let mut txid_bytes = hex::decode(&txid).unwrap();
+            txid_bytes.reverse();
 
-//     println!("Total Transactions: {}", total_transcations);
-//     println!("Valid Transactions: {}", valid_transactions);
-//     println!("Invalid Transactions: {}", invalid_transactions);
-// }
+            let mut hasher = Sha256::new();
+            hasher.update(txid_bytes);
+            let result = hasher.finalize();
+            let result = hex::encode(result);
+
+            println!("FilenameDerived: {}", result);
+            println!("Filename: {}", filename);
+            println!("TXID: {}", txid);
+            println!("WTXID: {}", wtxid);
+            println!("Serialized Transaction: {:?}", serialized_tx.0);
+        }
+    }
+}
 
 pub(crate) fn validate_all_p2pkh() {
     let path = "../mempool2";
@@ -82,7 +85,7 @@ pub(crate) fn validate_all_p2pkh() {
 }
 
 pub(crate) fn validate_all_p2wpkh() {
-    let path = "../mempool";
+    let path = "../mempool2";
     let mempool = fs::read_dir(path).unwrap();
 
     let mut count_p2wpkh = 0;

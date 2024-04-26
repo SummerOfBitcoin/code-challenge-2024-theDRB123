@@ -8,7 +8,11 @@ mod validation;
 fn main() {
     println!("Block Maker check");
     block_maker::block_maker();
+
+    // println!("Serializer");
+    // test_functions::test_serialization();
 }
+
 
 // fn test() {
 //     // println!("Serializer");

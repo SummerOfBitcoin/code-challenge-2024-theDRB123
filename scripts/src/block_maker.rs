@@ -85,8 +85,17 @@ pub(crate) fn block_maker() {
     println!("Elapsed: {:?}", now.elapsed());
 
     //before creating the wtxid, we add 000... as the coinbase transaction to it, 
-    transactions.1.insert(0, "0000000000000000000000000000000000000000000000000000000000000000".to_string());
-    let (mut txids, wtxids) = create_txid_wtxid(&transactions.0, &transactions.1);
+    // transactions.1.insert(0, "0000000000000000000000000000000000000000000000000000000000000000".to_string());
+
+
+    let (mut txids, mut wtxids) = create_txid_wtxid(&transactions.0, &transactions.1);
+    wtxids.insert(0,"0000000000000000000000000000000000000000000000000000000000000000".to_string());
+
+    for wtxid in &wtxids {
+        let mut txid_bytes = hex::decode(wtxid).unwrap();
+        txid_bytes.reverse();
+        println!("{}", hex::encode(txid_bytes));
+    }
 
     let merkle_wtxid = create_merkle_root(&wtxids);
 
@@ -100,6 +109,11 @@ pub(crate) fn block_maker() {
 
     //create merkle root
     let merkle_txid = create_merkle_root(&txids);
+    for txid in &txids {
+        let mut txid_bytes =    hex::decode(txid).unwrap();
+        txid_bytes.reverse();
+        println!("{}", hex::encode(txid_bytes));
+    }
     println!("Merkle_txid = {}", merkle_txid);
 
     let block_header = create_block_header(merkle_txid);
@@ -154,7 +168,7 @@ fn get_time() -> String {
     hex::encode(current.to_le_bytes())
 }
 
-fn hash256(data: &Vec<u8>) -> Vec<u8> {
+pub(crate) fn hash256(data: &Vec<u8>) -> Vec<u8> {
     let mut hasher = Sha256::new();
     hasher.update(data);
     let result = hasher.finalize_reset();
@@ -227,12 +241,12 @@ fn transaction_selector(txns: Vec<String>) -> (Vec<String>, Vec<String>, usize) 
     for transaction in txns {
         let tx: Value = serde_json::from_str(&transaction).expect("Error parsing JSON");
 
-        if !check_p2wpkh_pkh(&tx) {
-            continue;
-        }
-        if !validation::validate_segwit(&tx) {
-            continue;
-        }
+        // if !check_p2wpkh_pkh(&tx) {
+        //     continue;
+        // }
+        // if !validation::validate_segwit(&tx) {
+        //     continue;
+        // }
         let serialized_tx = serialization::serializer(&tx);
         let fees = calculate_fees(tx);
         let txwt = calculate_weight(&serialized_tx.1, &serialized_tx.2);
@@ -350,7 +364,7 @@ fn create_merkle_root(transactions: &Vec<String>) -> String {
 }
 
 fn read_trasactions() -> Vec<String> {
-    let path = "../mempool";
+    let path = "../mempool2";
     let directory = fs::read_dir(path).unwrap();
 
     let mut transactions: Vec<String> = vec![];
