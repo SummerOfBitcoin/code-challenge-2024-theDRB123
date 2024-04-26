@@ -88,7 +88,7 @@ pub(crate) fn block_maker() {
 
     let merkle_wtxid = create_merkle_root(&wtxids);
 
-    println!("merkle root -> {}", merkle_wtxid);
+    println!("merkle_wtxid root -> {}", merkle_wtxid);
     let coinbase_txn = create_coin_base(&merkle_wtxid, &transactions.2);
     println!("Coinbase: {}", coinbase_txn.0);
     transactions.0.insert(0, coinbase_txn.clone().0);
@@ -293,9 +293,9 @@ fn create_coin_base(merkle_root: &String, txn_fees: &usize) -> (String, String) 
         serde_json::Value::from(format!("{}{}", "6a24aa21a9ed", witness_commitment));
     coinbase["vout"][1]["scriptpubket_asm"] = serde_json::Value::from(format!(
         "{}{}",
-        "OP_0 OP_PUSHBYTES_32 aa21a9ed", merkle_root
+        "OP_0 OP_PUSHBYTES_36 aa21a9ed", witness_commitment
     ));
-
+    println!("Witness commitment => {}", witness_commitment);
     let coinbase_bytes = serialization::serialize_tx(&coinbase);
     let coinbase_hex = hex::encode(coinbase_bytes.0); //complete coinbase
     let coinbase_wit_hex = hex::encode(coinbase_bytes.1); //without witness data
