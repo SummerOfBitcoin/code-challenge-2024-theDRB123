@@ -8,7 +8,7 @@ use core::hash;
 use std::{
     fmt::format,
     fs,
-    io::{self, Read, Write},
+    io::{self, Bytes, Read, Write},
     string, vec,
 };
 
@@ -117,7 +117,9 @@ pub(crate) fn block_maker() {
     file.write_all("\n".as_bytes())
         .expect("Unable to write to file");
     for txn in txids {
-        file.write_all(txn.as_bytes())
+        let mut bytes = hex::decode(txn).unwrap();
+        bytes.reverse();
+        file.write_all(hex::encode(bytes).as_bytes())
             .expect("Unable to write to file");
         file.write_all("\n".as_bytes())
             .expect("Unable to write to file");
