@@ -241,7 +241,7 @@ fn transaction_selector(txns: Vec<String>) -> (Vec<String>, Vec<String>, usize) 
     for transaction in txns {
         let tx: Value = serde_json::from_str(&transaction).expect("Error parsing JSON");
 
-        if !check_p2pkh(&tx) {
+        if !check_p2wpkh_pkh(&tx) {
             continue;
         }
         if !validation::validate_segwit(&tx) {
@@ -250,8 +250,8 @@ fn transaction_selector(txns: Vec<String>) -> (Vec<String>, Vec<String>, usize) 
         let serialized_tx = serialization::serializer(&tx);
         let fees = calculate_fees(tx);
         let txwt = calculate_weight(&serialized_tx.1, &serialized_tx.2);
-        if weight + txwt < 4000000 - 1000  {
-        // if weight + txwt < 4000 {
+        // if weight + txwt < 4000000 - 1000  {
+        if weight + txwt < 4000 {
             //push the txndata and witness data to the txvec
             wtxvec.push(serialized_tx.clone().0); //for wtxid
             txvec.push(serialized_tx.clone().1); //for txid
@@ -268,7 +268,7 @@ fn transaction_selector(txns: Vec<String>) -> (Vec<String>, Vec<String>, usize) 
 pub(crate) fn check_p2wpkh_pkh(txn: &serde_json::Value) -> bool {
     for input in txn["vin"].as_array().unwrap() {
         if input["prevout"]["scriptpubkey_type"].as_str().unwrap() != "v0_p2wpkh"
-            && input["prevout"]["scriptpubkey_type"].as_str().unwrap() != "p2pkh"
+            // && input["prevout"]["scriptpubkey_type"].as_str().unwrap() != "p2pkh"
         {
             return false;
         } else {
