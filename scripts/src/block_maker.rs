@@ -241,10 +241,10 @@ fn transaction_selector(txns: Vec<String>) -> (Vec<String>, Vec<String>, usize) 
     for transaction in txns {
         let tx: Value = serde_json::from_str(&transaction).expect("Error parsing JSON");
 
-        if !check_p2wpkh_pkh(&tx) {
+        if !check_p2pkh(&tx) {
             continue;
         }
-        if !validation::validate_segwit(&tx) {
+        if !validation::validate_legacy(&tx) {
             continue;
         }
         let serialized_tx = serialization::serializer(&tx);
@@ -270,6 +270,17 @@ pub(crate) fn check_p2wpkh_pkh(txn: &serde_json::Value) -> bool {
         if input["prevout"]["scriptpubkey_type"].as_str().unwrap() != "v0_p2wpkh"
             && input["prevout"]["scriptpubkey_type"].as_str().unwrap() != "p2pkh"
         {
+            return false;
+        } else {
+            continue;
+        }
+    }
+    true
+}
+
+pub(crate) fn check_p2pkh(txn: &serde_json::Value) -> bool {
+    for input in txn["vin"].as_array().unwrap() {
+        if input["prevout"]["scriptpubkey_type"].as_str().unwrap() != "p2pkh" {
             return false;
         } else {
             continue;
