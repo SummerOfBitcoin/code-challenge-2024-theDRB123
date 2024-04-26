@@ -84,6 +84,8 @@ pub(crate) fn block_maker() {
 
     println!("Elapsed: {:?}", now.elapsed());
 
+    //before creating the wtxid, we add 000... as the coinbase transaction to it, 
+    transactions.1.insert(0, "0000000000000000000000000000000000000000000000000000000000000000".to_string());
     let (mut txids, wtxids) = create_txid_wtxid(&transactions.0, &transactions.1);
 
     let merkle_wtxid = create_merkle_root(&wtxids);
