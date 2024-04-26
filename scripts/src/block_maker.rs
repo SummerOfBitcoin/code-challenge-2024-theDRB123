@@ -91,11 +91,11 @@ pub(crate) fn block_maker() {
     let (mut txids, mut wtxids) = create_txid_wtxid(&transactions.0, &transactions.1);
     wtxids.insert(0,"0000000000000000000000000000000000000000000000000000000000000000".to_string());
 
-    for wtxid in &wtxids {
-        let mut txid_bytes = hex::decode(wtxid).unwrap();
-        txid_bytes.reverse();
-        println!("{}", hex::encode(txid_bytes));
-    }
+    // for wtxid in &wtxids {
+    //     let mut txid_bytes = hex::decode(wtxid).unwrap();
+    //     txid_bytes.reverse();
+    //     println!("{}", hex::encode(txid_bytes));
+    // }
 
     let merkle_wtxid = create_merkle_root(&wtxids);
 
@@ -109,11 +109,11 @@ pub(crate) fn block_maker() {
 
     //create merkle root
     let merkle_txid = create_merkle_root(&txids);
-    for txid in &txids {
-        let mut txid_bytes =    hex::decode(txid).unwrap();
-        txid_bytes.reverse();
-        println!("{}", hex::encode(txid_bytes));
-    }
+    // for txid in &txids {
+    //     let mut txid_bytes =    hex::decode(txid).unwrap();
+    //     txid_bytes.reverse();
+    //     println!("{}", hex::encode(txid_bytes));
+    // }
     println!("Merkle_txid = {}", merkle_txid);
 
     let block_header = create_block_header(merkle_txid);
