@@ -6,12 +6,7 @@
 
 use core::hash;
 use std::{
-    fmt::format,
-    fs,
-    io::{self, Bytes, Read, Write},
-    string,
-    time::{SystemTime, UNIX_EPOCH},
-    vec,
+    fmt::format, fs, io::{self, Bytes, Read, Write}, iter::OnceWith, string, time::{SystemTime, UNIX_EPOCH}, vec
 };
 
 use ripemd::digest::InvalidOutputSize;
@@ -291,8 +286,11 @@ fn create_coin_base(merkle_root: &String, txn_fees: &usize) -> (String, String) 
     let new_satoshis = txn_fees.clone();
     let mut coinbase = return_coinbase();
     coinbase["vout"][0]["value"] = serde_json::Value::from(new_satoshis);
+
+    let witness_commitment = calculate_witness_commitment(merkle_root);
+
     coinbase["vout"][1]["scriptpubkey"] =
-        serde_json::Value::from(format!("{}{}", "6a24aa21a9ed", merkle_root));
+        serde_json::Value::from(format!("{}{}", "6a24aa21a9ed", witness_commitment));
     coinbase["vout"][1]["scriptpubket_asm"] = serde_json::Value::from(format!(
         "{}{}",
         "OP_0 OP_PUSHBYTES_32 aa21a9ed", merkle_root
@@ -302,6 +300,18 @@ fn create_coin_base(merkle_root: &String, txn_fees: &usize) -> (String, String) 
     let coinbase_hex = hex::encode(coinbase_bytes.0); //complete coinbase
     let coinbase_wit_hex = hex::encode(coinbase_bytes.1); //without witness data
     return (coinbase_hex, coinbase_wit_hex);
+}
+
+fn calculate_witness_commitment(witness_root: &String) -> String {
+    let witness_reserved_value = "0000000000000000000000000000000000000000000000000000000000000000";
+    let wrv_bytes = hex::decode(witness_reserved_value).unwrap();
+    let wr_bytes = hex::decode(witness_root).unwrap();
+    let mut wc: Vec<u8> = vec![];
+    wc.extend(wr_bytes);
+    wc.extend(wrv_bytes);
+
+    let hash = hash256(&wc);
+    hex::encode(hash)
 }
 
 fn create_merkle_root(transactions: &Vec<String>) -> String {
