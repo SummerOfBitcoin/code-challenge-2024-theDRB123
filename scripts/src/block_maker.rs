@@ -102,7 +102,7 @@ pub(crate) fn block_maker() {
     txids.insert(0, serialization::txid_maker(coinbase_txn.clone().0));
 
     //create merkle root
-    let merkle_txid = create_merkle_root(&wtxids);
+    let merkle_txid = create_merkle_root(&txids);
     println!("Merkle_txid = {}", merkle_txid);
 
     let block_header = create_block_header(merkle_txid);
