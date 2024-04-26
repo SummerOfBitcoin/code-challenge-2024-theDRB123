@@ -241,12 +241,12 @@ fn transaction_selector(txns: Vec<String>) -> (Vec<String>, Vec<String>, usize) 
     for transaction in txns {
         let tx: Value = serde_json::from_str(&transaction).expect("Error parsing JSON");
 
-        // if !check_p2wpkh_pkh(&tx) {
-        //     continue;
-        // }
-        // if !validation::validate_segwit(&tx) {
-        //     continue;
-        // }
+        if !check_p2wpkh_pkh(&tx) {
+            continue;
+        }
+        if !validation::validate_segwit(&tx) {
+            continue;
+        }
         let serialized_tx = serialization::serializer(&tx);
         let fees = calculate_fees(tx);
         let txwt = calculate_weight(&serialized_tx.1, &serialized_tx.2);
