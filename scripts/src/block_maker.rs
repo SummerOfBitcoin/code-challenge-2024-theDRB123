@@ -6,10 +6,7 @@
 
 use core::hash;
 use std::{
-    fmt::format,
-    fs,
-    io::{self, Bytes, Read, Write},
-    string, vec,
+    fmt::format, fs, io::{self, Bytes, Read, Write}, string, time::{SystemTime, UNIX_EPOCH}, vec
 };
 
 use ripemd::digest::InvalidOutputSize;
@@ -104,7 +101,7 @@ pub(crate) fn block_maker() {
     println!("Merkle_txid = {}", merkle_txid);
 
     let block_header = create_block_header(merkle_txid);
-    
+
     // add the block header, serialized coinbase txn & list of all included txn in the output.txt file
     let mut file = fs::File::create("../output.txt").expect("Unable to create file");
 
@@ -131,9 +128,10 @@ pub(crate) fn block_maker() {
 fn create_block_header(merkle_root: String) -> String {
     let version = "04000000"; //little endian hex
     let prevous_block_hash = "0000000000000000000000000000000000000000000000000000000000000000"; //32 bytes of zeroes
-    let time = "662aad6e"; //unix timestamp
+    let time = get_time(); //"662aad6e"; //unix timestamp
     let target = "0000ffff00000000000000000000000000000000000000000000000000000000";
-    let bits = "1f00ffff"; //target
+    let bits = "ffff001f"; //target
+
     // let nonce = "42a14695"; //random number
     let header = format!(
         "{}{}{}{}{}",
@@ -144,25 +142,35 @@ fn create_block_header(merkle_root: String) -> String {
     header
 }
 
-fn hash256(data: &Vec<u8> ) -> Vec<u8> {
+fn get_time() -> String {
+    let now = SystemTime::now();
+    let current = now
+        .duration_since(UNIX_EPOCH)
+        .expect("Time went backwards")
+        .as_secs() as u32;
+
+    hex::encode(current.to_le_bytes())
+}
+
+fn hash256(data: &Vec<u8>) -> Vec<u8> {
     let mut hasher = Sha256::new();
     hasher.update(data);
     let result = hasher.finalize_reset();
     hasher.update(result);
-    
+
     let data = hasher.finalize_reset();
     data.to_vec()
-}   
+}
 
 fn mine_header(target: &str, header: String) -> String {
-    let mut nonce:u32 = 0;
+    let mut nonce: u32 = 0;
     let mut target_bytes = hex::decode(target).expect("Target invalid");
     let header_bytes_ = hex::decode(header).expect("Counldnt decode hex");
 
     loop {
         let mut header_bytes = header_bytes_.clone();
         header_bytes.extend(nonce.to_le_bytes());
-        
+
         let mut hash_bytes = hash256(&header_bytes);
         hash_bytes.reverse();
         //compare hash with the target
@@ -171,11 +179,9 @@ fn mine_header(target: &str, header: String) -> String {
             println!("Nonce = {}", nonce);
             return hex::encode(&header_bytes);
         }
-        nonce+=1;
+        nonce += 1;
     }
-
 }
-
 
 fn create_txid_wtxid(txns: &Vec<String>) -> (Vec<String>, Vec<String>) {
     let mut txids: Vec<String> = vec![];
@@ -217,7 +223,7 @@ fn transaction_selector(txns: Vec<String>) -> (Vec<String>, usize) {
 
     for transaction in txns {
         let tx: Value = serde_json::from_str(&transaction).expect("Error parsing JSON");
-     
+
         if !check_p2wpkh_pkh(&tx) {
             continue;
         }
