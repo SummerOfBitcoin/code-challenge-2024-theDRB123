@@ -152,8 +152,6 @@ fn check_p2wpkh(txn: serde_json::Value) -> bool {
     true
 }
 
-
-
 pub(crate) fn block_maker_check() {
     block_maker::block_maker();
 }

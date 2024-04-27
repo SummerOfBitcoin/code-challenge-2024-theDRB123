@@ -1,7 +1,6 @@
 extern crate hex;
 extern crate serde_json;
 
-
 use serde_json::{json, Value};
 use sha2::{Digest, Sha256};
 use std::{io::Read, vec};
@@ -71,7 +70,6 @@ pub fn serialize_tx(tx: &Value) -> (Vec<u8>, Vec<u8>, Vec<u8>) {
     let mut out = vec![];
     let mut alt_out = vec![];
     let mut wit_out = vec![];
-
 
     out.extend(&(tx["version"].as_u64().unwrap() as u32).to_le_bytes());
     alt_out.extend(&out);
@@ -258,10 +256,8 @@ pub(crate) fn create_reusables(tx: &Value) -> Reusables {
     let mut txn_outputs_serialized: Vec<u8> = vec![];
     for output in tx["vout"].as_array().unwrap() {
         txn_outputs_serialized.extend(serialize_output(output));
-        // let script_pub_key = output["scriptpubkey"]
     }
 
-    // println!("Serialized output-> {}", hex::encode(&txn_outputs_serialized));
     hasher.update(&txn_outputs_serialized);
     let output_hash = hasher.finalize_reset().to_vec();
     hasher.update(output_hash);
@@ -269,7 +265,6 @@ pub(crate) fn create_reusables(tx: &Value) -> Reusables {
 
     //get the locktime from the transaction
     let locktime = (tx["locktime"].as_u64().unwrap() as u32).to_le_bytes();
-    //convert to string
 
     Reusables {
         version: version_ln_bytes,
