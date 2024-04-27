@@ -3,7 +3,7 @@ extern crate serde_json;
 
 use serde_json::{json, Value};
 use sha2::{Digest, Sha256};
-use std::{io::Read, vec};
+use std::vec;
 
 pub(crate) fn encode_varint(num: u64) -> Vec<u8> {
     if num < 0xfd {
@@ -225,7 +225,7 @@ pub(crate) fn create_reusables(tx: &Value) -> Reusables {
 
     let mut input_txn_vout_hash: Vec<u8> = vec![];
 
-    for (index, input) in tx["vin"].as_array().unwrap().iter().enumerate() {
+    for (_index, input) in tx["vin"].as_array().unwrap().iter().enumerate() {
         let txid = hex::decode(input["txid"].as_str().unwrap()).expect("Invalid hex in txid");
         input_txn_vout_hash.extend(txid.iter().rev());
 
@@ -242,7 +242,7 @@ pub(crate) fn create_reusables(tx: &Value) -> Reusables {
     //now create for sequences
     let mut sequence_serialized: Vec<u8> = vec![];
 
-    for (index, input) in tx["vin"].as_array().unwrap().iter().enumerate() {
+    for (_index, input) in tx["vin"].as_array().unwrap().iter().enumerate() {
         let sequence_bytes = (input["sequence"].as_u64().unwrap() as u32).to_le_bytes();
         sequence_serialized.extend(sequence_bytes);
     }

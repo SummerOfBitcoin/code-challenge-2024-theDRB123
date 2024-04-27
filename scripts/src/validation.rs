@@ -1,10 +1,7 @@
-use std::vec;
 use secp256k1::{
-    ecdsa::{self, Signature},
-    Error, Message, PublicKey, Secp256k1, SecretKey, Signing, Verification,
+    ecdsa::Signature,
+    Message, PublicKey, Secp256k1,
 };
-use serde_json::value::Index;
-use sha2::{Digest, Sha256};
 use crate::serialization;
 
 

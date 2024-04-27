@@ -1,23 +1,11 @@
-// keeps the basic functions and types that are making the blocks
-
-// use std::fs;
-
-// use crate::verification;
-
-use core::hash;
 use std::{
-    fmt::format,
     fs,
-    io::{self, Bytes, Read, Write},
-    iter::OnceWith,
-    string,
+    io::{Read, Write},
     time::{SystemTime, UNIX_EPOCH},
     vec,
 };
 
-use ripemd::digest::InvalidOutputSize;
-use secp256k1::ffi::NonceFn;
-use serde_json::{value::Index, Value};
+use serde_json::Value;
 use sha2::{Digest, Sha256};
 
 use crate::{serialization, validation};
@@ -27,7 +15,7 @@ pub(crate) fn block_maker() {
 
     let now = Instant::now();
 
-    let mut transactions_json = read_trasactions();
+    let transactions_json = read_trasactions();
     println!("transactions read");
     println!("Elapsed: {:?}", now.elapsed());
 
@@ -118,7 +106,7 @@ pub(crate) fn hash256(data: &Vec<u8>) -> Vec<u8> {
 
 fn mine_header(target: &str, header: String) -> String {
     let mut nonce: u32 = 0;
-    let mut target_bytes = hex::decode(target).expect("Target invalid");
+    let target_bytes = hex::decode(target).expect("Target invalid");
     let header_bytes_ = hex::decode(header).expect("Counldnt decode hex");
 
     loop {
@@ -223,7 +211,7 @@ pub fn check_p2wpkh_pkh(txn: &serde_json::Value) -> bool {
     true
 }
 
-pub fn check_p2pkh(txn: &serde_json::Value) -> bool {
+pub fn _check_p2pkh(txn: &serde_json::Value) -> bool {
     for input in txn["vin"].as_array().unwrap() {
         if input["prevout"]["scriptpubkey_type"].as_str().unwrap() != "p2pkh" {
             return false;
@@ -339,12 +327,6 @@ fn read_trasactions() -> Vec<String> {
     }
 
     return transactions;
-}
-
-fn create_header() -> String {
-    let version = "01000000"; //little endian hex
-    let previous_block_hash = "0000000000000000000000000000000000000000000000000000000000000000";
-    todo!()
 }
 
 fn return_coinbase() -> serde_json::Value {

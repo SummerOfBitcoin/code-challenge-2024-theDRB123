@@ -1,4 +1,3 @@
-use ecdsa::signature::rand_core::block;
 use sha2::{Digest, Sha256};
 use std::fs;
 use std::io::Read;
@@ -6,13 +5,9 @@ use std::io::Read;
 use crate::{block_maker, serialization};
 use crate::validation::{validate_legacy, validate_segwit};
 
-pub(crate) fn test_serialization() {
+pub(crate) fn _test_serialization() {
     let path = "../mempool2";
     let mempool = fs::read_dir(path).unwrap();
-    let mut total_transcations = 0;
-    let mut valid_transactions = 0;
-    let mut invalid_transactions = 0;
-
     for transaction in mempool {
         let transaction = transaction.expect("Unable to read directory transaction");
         if transaction.path().is_file() {
@@ -32,7 +27,7 @@ pub(crate) fn test_serialization() {
 
             let serialized_tx = serialization::serializer(&txn);
 
-            let mut txid = serialization::txid_maker(serialized_tx.1.clone());
+            let txid = serialization::txid_maker(serialized_tx.1.clone());
             let wtxid = serialization::txid_maker(serialized_tx.0.clone());
 
             let mut txid_bytes = hex::decode(&txid).unwrap();
@@ -52,14 +47,12 @@ pub(crate) fn test_serialization() {
     }
 }
 
-pub(crate) fn validate_all_p2pkh() {
+pub(crate) fn _validate_all_p2pkh() {
     let path = "../mempool2";
     let mempool = fs::read_dir(path).unwrap();
 
     let mut count_p2pkh = 0;
     let mut count_valid = 0;
-
-    let mut index = 0;
 
     for transaction in mempool {
         let transaction = transaction.expect("Unable to read directory transaction");
@@ -72,7 +65,7 @@ pub(crate) fn validate_all_p2pkh() {
 
             let txn: serde_json::Value =
                 serde_json::from_str(&tx_data).expect("Error parsing JSON");
-            if check_p2pkh(txn) {
+            if _check_p2pkh(txn) {
                 count_p2pkh += 1;
                 if validate_legacy(&tx_data) {
                     count_valid += 1;
@@ -84,14 +77,12 @@ pub(crate) fn validate_all_p2pkh() {
     println!("Valid P2PKH Transactions: {}", count_valid);
 }
 
-pub(crate) fn validate_all_p2wpkh() {
+pub(crate) fn _validate_all_p2wpkh() {
     let path = "../mempool2";
     let mempool = fs::read_dir(path).unwrap();
 
     let mut count_p2wpkh = 0;
     let mut count_valid = 0;
-
-    let mut index = 0;
 
     for transaction in mempool {
         let transaction = transaction.expect("Unable to read directory transaction");
@@ -120,7 +111,7 @@ pub(crate) fn validate_all_p2wpkh() {
 
 }
 
-fn reverse_bytes(bytes: &[u8]) -> Vec<u8> {
+fn _reverse_bytes(bytes: &[u8]) -> Vec<u8> {
     let mut reversed_bytes = vec![];
     for byte in bytes.iter().rev() {
         reversed_bytes.push(*byte);
@@ -128,7 +119,7 @@ fn reverse_bytes(bytes: &[u8]) -> Vec<u8> {
     reversed_bytes
 }
 
-fn check_p2pkh(txn: serde_json::Value) -> bool {
+fn _check_p2pkh(txn: serde_json::Value) -> bool {
     //check if all inputs are p2pkh
     for input in txn["vin"].as_array().unwrap() {
         if input["prevout"]["scriptpubkey_type"].as_str().unwrap() != "p2pkh" {
@@ -140,7 +131,7 @@ fn check_p2pkh(txn: serde_json::Value) -> bool {
     true
 }
 
-fn check_p2wpkh(txn: serde_json::Value) -> bool {
+fn _check_p2wpkh(txn: serde_json::Value) -> bool {
     //check if all inputs are p2wpkh
     for input in txn["vin"].as_array().unwrap() {
         if input["prevout"]["scriptpubkey_type"].as_str().unwrap() != "v0_p2wpkh" {
@@ -150,8 +141,4 @@ fn check_p2wpkh(txn: serde_json::Value) -> bool {
         }
     }
     true
-}
-
-pub(crate) fn block_maker_check() {
-    block_maker::block_maker();
 }

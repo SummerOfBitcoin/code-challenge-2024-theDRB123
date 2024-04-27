@@ -1,4 +1,3 @@
-#![allow(warnings)]
 mod block_maker;
 mod serialization;
 mod test_functions;
